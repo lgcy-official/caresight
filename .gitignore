@@ -1,0 +1,13 @@
+.env
+.env.local
+.DS_Store
+next-env.d.ts
+/.next/
+/node_modules
+/.venv/
+/.venv311/
+/.vscode/
+/public/snapshots/
+/video_service/__pycache__/
+tsconfig.tsbuildinfo
+*.pyc

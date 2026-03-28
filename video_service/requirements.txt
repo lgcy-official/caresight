@@ -1,0 +1,8 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+vidgear[core]>=0.3.3
+ultralytics==8.4.30
+numpy<2
+opencv-python==4.10.0.84
+streamlink>=6.7.0
+pydantic>=2.7.0

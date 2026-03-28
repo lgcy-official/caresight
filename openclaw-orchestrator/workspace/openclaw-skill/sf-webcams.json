@@ -1,0 +1,18 @@
+[
+  {
+    "id": "pacifica-beach",
+    "name": "Pacifica Beach",
+    "url": "https://youtu.be/UYu-TjvAVFs",
+    "lat": 37.6138,
+    "lng": -122.4869,
+    "location": "Pacifica, CA"
+  },
+  {
+    "id": "sf-golden-gate",
+    "name": "Golden Gate Bridge",
+    "url": "https://www.skylinewebcams.com/en/webcam/united-states/california/san-francisco/san-francisco.html",
+    "lat": 37.8199,
+    "lng": -122.4783,
+    "location": "Golden Gate Bridge, San Francisco"
+  }
+]
