@@ -1,0 +1,16 @@
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-sonnet-4-6"
+      }
+    },
+    list: [
+      {
+        id: "paulblart",
+        default: true,
+        workspace: "/home/node/.openclaw/workspace"
+      }
+    ]
+  }
+}
