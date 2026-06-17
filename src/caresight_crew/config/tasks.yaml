@@ -1,0 +1,42 @@
+scout_task:
+  description: >
+    For {location}, select {camera_count} public or demo safety camera feeds. Return each feed with:
+    camera name, location, intended monitoring use, and likely operational risks.
+  expected_output: >
+    A structured list of cameras and operational risks.
+  agent: scout
+
+analyzer_task:
+  description: >
+    Review the Scout output and produce possible safety events. For each relevant candidate, return:
+    event_type, severity, confidence from 0.0 to 1.0, evidence list, explanation, and risk_score from 0 to 100.
+    Consider event types: {event_types}. Avoid identity recognition or unsupported criminal claims.
+  expected_output: >
+    Structured event candidates with severity, confidence, evidence, explanation, and risk score.
+  agent: analyzer
+  context:
+    - scout_task
+
+planner_task:
+  description: >
+    Use the highest-risk Analyzer candidate and compare risk_score to responder threshold {responder_threshold}.
+    If below threshold, return "No responder action recommended" and explain why. If at or above threshold,
+    return incident_title, executive_summary, location, event, priority, information_missing,
+    recommended_action, and estimated_urgency.
+  expected_output: >
+    A threshold-based response decision and response plan when needed.
+  agent: planner
+  context:
+    - analyzer_task
+
+audit_task:
+  description: >
+    Summarize the complete Scout -> Analyzer -> Planner workflow. Include TrueFoundry AI Gateway routing,
+    human review before escalation, no identity recognition, and what evidence was used.
+  expected_output: >
+    A concise audit report for hackathon judges.
+  agent: audit
+  context:
+    - scout_task
+    - analyzer_task
+    - planner_task
