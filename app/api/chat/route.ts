@@ -1,4 +1,5 @@
 import { createMainAgentStream, stopAllAgents } from '@/agents/main-agent';
+import { runCrewAiOrchestrator } from '@/services/crewai-client';
 
 export const maxDuration = 300; // 5 min — Browser Use skill can take ~30s per attempt
 
@@ -26,6 +27,13 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (process.env.USE_CREWAI_ORCHESTRATOR === 'true') {
+      const result = await runCrewAiOrchestrator(prompt, body.location);
+      return new Response(result, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
+    }
+
     const result = await createMainAgentStream(prompt);
     return result.toTextStreamResponse();
   } catch (err) {

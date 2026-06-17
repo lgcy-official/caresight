@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { SurveillanceEvent, Camera } from '@/lib/types';
+import type {
+  AgentAnalysisOutput,
+  AgentCollaborationEvent,
+  AgentTask,
+  IncidentResponsePlan,
+  SurveillanceEvent,
+  Camera,
+} from '@/lib/types';
 import type { GeoLocation } from '@/components/location-search';
 
 // Module-level cache — persists across renders and component remounts.
@@ -42,6 +49,10 @@ export interface AgentSSEState {
   realCameras: Camera[] | null;
   realIncidents: RealIncident[];
   videoFeeds: Record<string, VideoFeed>;
+  collaborations: AgentCollaborationEvent[];
+  agentTasks: AgentTask[];
+  analyses: AgentAnalysisOutput[];
+  responsePlans: IncidentResponsePlan[];
   connected: boolean;
 }
 
@@ -51,6 +62,10 @@ const INITIAL_STATE: AgentSSEState = {
   realCameras: null,
   realIncidents: [],
   videoFeeds: {},
+  collaborations: [],
+  agentTasks: [],
+  analyses: [],
+  responsePlans: [],
   connected: false,
 };
 
@@ -160,6 +175,45 @@ export function useAgentSSE(location: GeoLocation | null, active: boolean) {
               agentLog: [entry, ...current.agentLog].slice(0, 50),
             };
           });
+        } else if (event.type === 'agent_collaboration') {
+          setState((s) => {
+            const current = s.sessionKey === sessionKey ? s : createSessionState(sessionKey);
+            return {
+              ...current,
+              collaborations: [event.event, ...current.collaborations]
+                .filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index)
+                .slice(0, 30),
+            };
+          });
+        } else if (event.type === 'agent_task') {
+          setState((s) => {
+            const current = s.sessionKey === sessionKey ? s : createSessionState(sessionKey);
+            const existing = current.agentTasks.filter((task) => task.id !== event.task.id);
+            return {
+              ...current,
+              agentTasks: [event.task, ...existing].slice(0, 20),
+            };
+          });
+        } else if (event.type === 'agent_analysis') {
+          setState((s) => {
+            const current = s.sessionKey === sessionKey ? s : createSessionState(sessionKey);
+            return {
+              ...current,
+              analyses: [event.analysis, ...current.analyses]
+                .filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index)
+                .slice(0, 12),
+            };
+          });
+        } else if (event.type === 'incident_response_plan') {
+          setState((s) => {
+            const current = s.sessionKey === sessionKey ? s : createSessionState(sessionKey);
+            return {
+              ...current,
+              responsePlans: [event.plan, ...current.responsePlans]
+                .filter((item, index, items) => items.findIndex((candidate) => candidate.id === item.id) === index)
+                .slice(0, 8),
+            };
+          });
         }
       } catch {
         // ignore malformed events
@@ -189,6 +243,10 @@ export function useAgentSSE(location: GeoLocation | null, active: boolean) {
     realCameras: state.realCameras,
     realIncidents: state.realIncidents,
     videoFeeds: state.videoFeeds,
+    collaborations: state.collaborations,
+    agentTasks: state.agentTasks,
+    analyses: state.analyses,
+    responsePlans: state.responsePlans,
     connected: state.connected,
   };
 }

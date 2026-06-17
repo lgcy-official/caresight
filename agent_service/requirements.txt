@@ -1,0 +1,8 @@
+crewai>=1.14.0
+crewai-tools>=1.0.0
+fastapi>=0.111.0
+mcp>=1.13.0
+pydantic>=2.7.0
+traceloop-sdk>=0.43.0
+uvicorn[standard]>=0.29.0
+

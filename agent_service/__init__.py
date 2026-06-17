@@ -1,0 +1,2 @@
+"""CrewAI sidecar for CareSight."""
+

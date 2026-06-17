@@ -39,6 +39,63 @@ interface CameraFeatureProperties {
   selected: number;
 }
 
+function fallbackPosition(lat: number, lng: number) {
+  return {
+    left: `${((lng + 180) / 360) * 100}%`,
+    top: `${((90 - lat) / 180) * 100}%`,
+  };
+}
+
+function GlobeFallback({
+  visible,
+  cameras,
+  selectedLocation,
+}: {
+  visible: boolean;
+  cameras: Camera[];
+  selectedLocation: GeoLocation | null;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`absolute inset-0 grid place-items-center bg-gray-950 transition-opacity duration-500 ${
+        visible ? 'opacity-100' : 'pointer-events-none opacity-0'
+      }`}
+    >
+      <div className="relative h-[min(68vw,68vh)] min-h-80 w-[min(68vw,68vh)] min-w-80 overflow-hidden rounded-full border border-cyan-200/10 bg-slate-950 shadow-[0_0_90px_rgba(34,211,238,0.14)]">
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_34%_28%,rgba(56,189,248,0.34),rgba(8,47,73,0.58)_34%,rgba(2,6,23,0.96)_72%)]" />
+        <div className="absolute inset-[8%] rounded-full border border-cyan-200/10" />
+        <div className="absolute inset-[17%] rounded-full border border-cyan-200/10" />
+        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-cyan-200/10" />
+        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-cyan-200/10" />
+        <div className="absolute left-[13%] top-[28%] h-[22%] w-[28%] rounded-[52%_48%_46%_54%] bg-emerald-400/20 blur-[1px]" />
+        <div className="absolute right-[18%] top-[20%] h-[28%] w-[22%] rounded-[45%_55%_56%_44%] bg-emerald-300/16 blur-[1px]" />
+        <div className="absolute bottom-[18%] left-[42%] h-[22%] w-[20%] rounded-[42%_58%_49%_51%] bg-emerald-400/14 blur-[1px]" />
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_72%_72%,transparent_0,rgba(2,6,23,0.66)_58%,rgba(2,6,23,0.96)_100%)]" />
+
+        {selectedLocation && (
+          <span
+            className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/80 bg-blue-400 shadow-[0_0_18px_rgba(96,165,250,0.9)]"
+            style={fallbackPosition(selectedLocation.lat, selectedLocation.lng)}
+          />
+        )}
+
+        {cameras.map((camera) => (
+          <span
+            key={camera.id}
+            className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/60 shadow-[0_0_14px_currentColor]"
+            style={{
+              ...fallbackPosition(camera.lat, camera.lng),
+              backgroundColor: RISK_COLOR[camera.riskLevel],
+              color: RISK_COLOR[camera.riskLevel],
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, onMapClick, onCameraClick, onCameraContextMenu }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -46,6 +103,7 @@ export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, o
   const isSpinningRef = useRef(true);
   const hasFitBoundsRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
   const onCameraClickRef = useRef(onCameraClick);
@@ -79,6 +137,7 @@ export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, o
     if (!containerRef.current || mapRef.current) return;
 
     import('maplibre-gl').then(({ default: maplibregl }) => {
+      setMapFailed(false);
       const map = new maplibregl.Map({
         container: containerRef.current!,
         style: CARTO_DARK_STYLE,
@@ -285,7 +344,7 @@ export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, o
       });
 
       mapRef.current = map;
-    });
+    }).catch(() => setMapFailed(true));
 
     return () => {
       if (spinFrameRef.current !== null) cancelAnimationFrame(spinFrameRef.current);
@@ -344,7 +403,7 @@ export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, o
   }, [selectedLocation, mapReady]);
 
   return (
-    <>
+    <div className="relative h-full w-full overflow-hidden bg-gray-950">
       <style>{`
         .maplibregl-popup-content {
           border-radius: 8px !important;
@@ -357,7 +416,11 @@ export function SurveillanceMap({ cameras, selectedCameraId, selectedLocation, o
         .maplibregl-ctrl-group button { background: transparent !important; color: #888 !important; }
         .maplibregl-ctrl-group button:hover { background: rgba(255,255,255,0.05) !important; }
       `}</style>
-      <div ref={containerRef} className="w-full h-full" />
-    </>
+      <GlobeFallback visible={!mapReady || mapFailed} cameras={cameras} selectedLocation={selectedLocation} />
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 transition-opacity duration-500 ${mapReady && !mapFailed ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
   );
 }

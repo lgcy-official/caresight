@@ -70,6 +70,7 @@ export async function runCctvWatcher(
   const GENERATE_CRIME_AT = Math.floor(Math.random() * 7); // random frame 0-6
   console.log(`[${agentId}] AI generation scheduled at frame ${GENERATE_CRIME_AT + 1} (max 5 frames)`);
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const syntheticIncidentsEnabled = process.env.SYNTHETIC_INCIDENTS_ENABLED === 'true';
 
   let i = 0;
   while (!abort?.aborted && i < 5) {
@@ -85,7 +86,7 @@ export async function runCctvWatcher(
 
     // On frame GENERATE_CRIME_AT, AI-generate a crime scene from the current frame
     let generated = false;
-    if (i === GENERATE_CRIME_AT && apiKey) {
+    if (syntheticIncidentsEnabled && i === GENERATE_CRIME_AT && apiKey) {
       console.log(`[${agentId}] Generating AI crime scene from current frame...`);
       try {
         const res = await fetch(

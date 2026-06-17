@@ -118,12 +118,36 @@ That means:
 
 ### Environment
 
-Create `.env.local` with:
+Create `.env.local` with the values from `.env.local.example`.
+
+For the original TypeScript/Gemini orchestrator path:
 
 ```bash
 GEMINI_API_KEY=your_key_here
 PYTHON_SERVICE_URL=http://127.0.0.1:8001
 PYTHON_SERVICE_ENABLED=true
+```
+
+For the hackathon CrewAI + TrueFoundry path:
+
+```bash
+USE_CREWAI_ORCHESTRATOR=true
+CREWAI_SERVICE_URL=http://127.0.0.1:8010
+TRUEFOUNDRY_GATEWAY_BASE_URL=https://gateway.truefoundry.ai
+TRUEFOUNDRY_MODEL=openai/openai/gpt-5.5
+TRUEFOUNDRY_API_KEY=your_truefoundry_gateway_key
+TRUEFOUNDRY_METADATA={}
+TRUEFOUNDRY_LOGGING_CONFIG={"enabled": true}
+CARESIGHT_NEXT_BASE_URL=http://127.0.0.1:3000
+SYNTHETIC_INCIDENTS_ENABLED=false
+```
+
+Optional TrueFoundry tracing:
+
+```bash
+TRUEFOUNDRY_TRACING_ENDPOINT=
+TRUEFOUNDRY_PAT_TOKEN=
+TRUEFOUNDRY_TRACING_PROJECT=caresight
 ```
 
 Optional Twilio variables:
@@ -150,12 +174,24 @@ Create the Python environment and install the video-service dependencies:
 ./.venv311/bin/pip install -r video_service/requirements.txt
 ```
 
+Install the CrewAI sidecar dependencies into the same environment, or into a separate one:
+
+```bash
+./.venv311/bin/pip install -r agent_service/requirements.txt
+```
+
 ## Run
 
 Start the Python video service:
 
 ```bash
 ./.venv311/bin/python -m uvicorn video_service.main:app --host 127.0.0.1 --port 8001
+```
+
+For the CrewAI + TrueFoundry hackathon path, start the agent sidecar:
+
+```bash
+./.venv311/bin/python -m uvicorn agent_service.main:app --host 127.0.0.1 --port 8010 --reload
 ```
 
 Start the frontend:
@@ -191,3 +227,7 @@ Current limitations are important:
 If you are pitching or demoing this project, the most accurate short description is:
 
 > CareSight is an AI-assisted surveillance dashboard that discovers public livestream cameras for a location, monitors them with agent and CV workflows, and surfaces live incidents for human review and escalation.
+
+For the hackathon pitch, the safer positioning is:
+
+> CareSight is a public-safety operations console that uses CrewAI agents, MCP tools, and TrueFoundry-routed model calls to deploy public/demo feeds, triage operational incidents, and maintain an auditable human-review workflow.

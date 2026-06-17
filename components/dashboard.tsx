@@ -1,18 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { LocationSearch, type GeoLocation } from './location-search';
 import { MockCctvFeed } from './mock-cctv-feed';
 import type { Camera, RiskLevel } from '@/lib/types';
-import type { CameraContextMenu } from './surveillance-map';
+import { SurveillanceMap, type CameraContextMenu } from './surveillance-map';
 import { useAgentSSE } from '@/hooks/use-agent-sse';
 import { IncidentFeed } from './incident-feed';
-
-const SurveillanceMap = dynamic(
-  () => import('./surveillance-map').then((m) => m.SurveillanceMap),
-  { ssr: false, loading: () => <div className="w-full h-full bg-gray-950" /> }
-);
+import { AgentConsole } from './agent-console';
 
 const RISK_LABEL: Record<RiskLevel, string> = { critical: 'CRITICAL', high: 'HIGH', medium: 'MED' };
 const RISK_BADGE: Record<RiskLevel, string> = {
@@ -26,11 +21,28 @@ const RISK_DOT: Record<RiskLevel, string> = {
   medium: 'bg-yellow-400',
 };
 
+const DISABLED_EXTERNAL_VIDEO_PREFIXES = ['care-castro-1', 'care-sfo-airport', 'care-academy'];
+
+function externalVideoEnabled(cameraId: string) {
+  return !DISABLED_EXTERNAL_VIDEO_PREFIXES.some((prefix) => cameraId.startsWith(prefix));
+}
+
 export function Dashboard() {
   const [selectedLocation, setSelectedLocation] = useState<GeoLocation | null>(null);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(null);
   const [agentLocation, setAgentLocation] = useState<GeoLocation | null>(null);
-  const { agentMessage, agentLog, realCameras, realIncidents, videoFeeds, connected } = useAgentSSE(
+  const {
+    agentMessage,
+    agentLog,
+    realCameras,
+    realIncidents,
+    videoFeeds,
+    collaborations,
+    agentTasks,
+    analyses,
+    responsePlans,
+    connected,
+  } = useAgentSSE(
     agentLocation,
     !!agentLocation,
   );
@@ -154,10 +166,9 @@ export function Dashboard() {
             </svg>
             <span className="text-[11px] font-semibold tracking-widest text-gray-400 uppercase">CareSight AI</span>
           </div>
-          <div className="w-80">
+          <div className="w-[min(560px,calc(100vw-2rem))]">
             <LocationSearch
               onResults={handleResults}
-              onLocationSelect={handleMapClick}
               agentLoading={!!agentLocation && cameras.length === 0}
             />
           </div>
@@ -169,17 +180,18 @@ export function Dashboard() {
         const live = liveStates[selectedCamera.id];
         const risk = live?.riskLevel ?? selectedCamera.riskLevel;
         const flashKey = `${selectedCamera.id}:${live?.lastEvent?.id ?? 'idle'}`;
+        const videoFeed = externalVideoEnabled(selectedCamera.id) ? videoFeeds[selectedCamera.id] : null;
         return (
           <div
             key={flashKey}
-            className={`absolute right-4 top-24 z-30 w-72 bg-gray-950/95 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-2xl ${live?.lastEvent ? 'alert-flash' : ''}`}
+            className={`absolute right-4 top-24 z-30 w-[min(560px,calc(100vw-2rem))] max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-white/10 bg-gray-950/95 shadow-2xl backdrop-blur-md ${live?.lastEvent ? 'alert-flash' : ''}`}
           >
             {/* Feed */}
             <div className="w-full aspect-video bg-black relative">
-              {videoFeeds[selectedCamera.id] ? (
+              {videoFeed ? (
                 <iframe
-                  src={`https://www.youtube.com/embed/${videoFeeds[selectedCamera.id].youtubeVideoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0`}
-                  title={videoFeeds[selectedCamera.id].title}
+                  src={`https://www.youtube.com/embed/${videoFeed.youtubeVideoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0`}
+                  title={videoFeed.title}
                   className="w-full h-full"
                   allow="autoplay; encrypted-media"
                   allowFullScreen
@@ -197,7 +209,7 @@ export function Dashboard() {
             </div>
 
             {/* Info */}
-            <div className="px-4 py-3 space-y-2">
+            <div className="max-h-64 space-y-2 overflow-y-auto px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[risk]}`} />
                 <span className="text-sm font-semibold text-white flex-1 truncate">{selectedCamera.name}</span>
@@ -313,20 +325,31 @@ export function Dashboard() {
         cameras={cameras}
       />
 
+      <AgentConsole
+        connected={connected}
+        collaborations={collaborations}
+        agentTasks={agentTasks}
+        analyses={analyses}
+        responsePlans={responsePlans}
+      />
+
       {/* ── Agent log ── */}
       {agentLog.length > 0 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 w-[480px] max-w-[calc(100vw-2rem)] px-4">
-          <div className="bg-black/70 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden">
+        <div className="absolute bottom-4 right-4 z-30 w-[min(560px,calc(100vw-2rem))]">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/75 shadow-2xl backdrop-blur-md">
             {/* Latest message */}
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
-              <p className="text-[11px] text-blue-300/80 truncate flex-1">{agentMessage}</p>
+            <div className="flex items-center gap-3 border-b border-white/8 px-4 py-3">
+              <span className={`h-2 w-2 flex-shrink-0 rounded-full ${connected ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Agent Log</p>
+                <p className="mt-0.5 truncate text-sm text-blue-200/90">{agentMessage}</p>
+              </div>
             </div>
             {/* Scrollable log */}
             {agentLog.length > 1 && (
-              <div className="max-h-28 overflow-y-auto px-3 py-1.5 space-y-0.5">
+              <div className="max-h-56 space-y-1 overflow-y-auto px-4 py-3">
                 {agentLog.slice(1).map((entry, i) => (
-                  <p key={i} className="text-[10px] text-gray-600 font-mono leading-relaxed">{entry}</p>
+                  <p key={i} className="font-mono text-xs leading-relaxed text-gray-500">{entry}</p>
                 ))}
               </div>
             )}

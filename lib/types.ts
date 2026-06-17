@@ -92,6 +92,109 @@ export interface CameraLiveState {
   isLive: boolean;
 }
 
+export interface IntegrationAgent {
+  id: string;
+  role: string;
+  goal: string;
+  status: 'pending' | 'running' | 'complete' | 'error';
+}
+
+export interface IntegrationToolCall {
+  id: string;
+  toolName: string;
+  agentRole: string;
+  summary: string;
+  status: 'started' | 'complete' | 'error';
+  timestamp: number;
+}
+
+export interface IntegrationProof {
+  runId: string;
+  orchestrator: 'CrewAI';
+  runtime: 'crewai' | 'local-fallback';
+  gatewayBaseUrl: string;
+  model: string;
+  tracingProject: string;
+  tracingEnabled: boolean;
+  mcpServer: string;
+  agents: IntegrationAgent[];
+  mcpTools: string[];
+  governanceNotes: string[];
+  timestamp: number;
+}
+
+export interface OperationsReport {
+  id: string;
+  title: string;
+  summary: string;
+  controls: string[];
+  timestamp: number;
+}
+
+export interface AgentCollaborationEvent {
+  id: string;
+  fromAgent: string;
+  toAgent: string;
+  action: string;
+  message: string;
+  status: 'queued' | 'running' | 'complete' | 'blocked';
+  timestamp: number;
+}
+
+export interface AgentTask {
+  id: string;
+  owner: string;
+  title: string;
+  detail: string;
+  status: 'queued' | 'running' | 'complete' | 'blocked';
+  timestamp: number;
+}
+
+export type AgentAnalysisEventType =
+  | 'traffic_collision'
+  | 'smoke'
+  | 'fire'
+  | 'crowd_surge'
+  | 'medical_emergency'
+  | 'security_concern'
+  | 'infrastructure_hazard'
+  | 'unknown';
+
+export interface AgentAnalysisOutput {
+  id: string;
+  runId: string;
+  sourceAgent: string;
+  cameraId: string;
+  cameraName: string;
+  eventType: AgentAnalysisEventType;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  confidence: number;
+  riskScore: number;
+  evidence: string[];
+  explanation: string;
+  timestamp: number;
+}
+
+export interface IncidentResponsePlan {
+  id: string;
+  runId: string;
+  sourceAgent: string;
+  cameraId: string;
+  cameraName: string;
+  threshold: number;
+  riskScore: number;
+  responderActionRecommended: boolean;
+  incidentTitle: string;
+  executiveSummary: string;
+  location: string;
+  event: string;
+  priority: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  informationMissing: string[];
+  recommendedAction: string;
+  estimatedUrgency: string;
+  timestamp: number;
+}
+
 export type SurveillanceEvent =
   | { type: 'camera_deployed'; camera: CameraStatus }
   | { type: 'camera_status'; cameraId: string; status: CameraStatus['status'] }
@@ -100,6 +203,13 @@ export type SurveillanceEvent =
   | { type: 'hotspots'; hotspots: CrimeHotspot[] }
   | { type: 'cameras_ready'; cameras: Camera[] }
   | { type: 'agent_message'; message: string }
+  | { type: 'integration_status'; proof: IntegrationProof }
+  | { type: 'mcp_tool_call'; toolCall: IntegrationToolCall }
+  | { type: 'operations_report'; report: OperationsReport }
+  | { type: 'agent_collaboration'; event: AgentCollaborationEvent }
+  | { type: 'agent_task'; task: AgentTask }
+  | { type: 'agent_analysis'; analysis: AgentAnalysisOutput }
+  | { type: 'incident_response_plan'; plan: IncidentResponsePlan }
   | {
       type: 'videos_ready';
       videos: Array<{

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "crewai:dev": "python -m uvicorn agent_service.main:app --host 127.0.0.1 --port 8010 --reload",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
